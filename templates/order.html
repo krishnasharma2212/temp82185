@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Meine Bestellungen | Realistix Doll</title>
+
+
+    <link rel="icon" type="image/png" href="/static/icons/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/static/icons/favicon.svg" />
+    <link rel="shortcut icon" href="/static/icons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Realistix Doll" />
+    <link rel="manifest" href="/static/icons/site.webmanifest" />
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#20cfdf",
+                        "primary-light": "#e0fbfc",
+                        "primary-dark": "#158c97",
+                        "alert-amber": "#f59e0b",
+                        "success-green": "#10b981"
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"],
+                        "serif": ["Playfair Display", "serif"],
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'slide-up': 'slideUp 0.5s ease-out forwards'
+                    },
+                    keyframes: {
+                        shimmer: { '0%': { backgroundPosition: '-1000px 0' }, '100%': { backgroundPosition: '1000px 0' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Timeline Connector Line Animation */
+        .timeline-line {
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Lock Overlay */
+        body.auth-locked {
+            overflow: hidden;
+        }
+
+        #app-content.blurred {
+            filter: blur(16px);
+            pointer-events: none;
+            user-select: none;
+            opacity: 0.5;
+        }
+
+        /* Modal Transitions */
+        .modal {
+            transition: opacity 0.3s ease-out, visibility 0.3s;
+        }
+
+        .modal-content {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .modal.hidden .modal-content {
+            transform: scale(0.95);
+        }
+
+        /* Toast Animations */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .toast {
+            animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+        }
+
+        .toast.hiding {
+            animation: fadeOutRight 0.4s ease-in forwards;
+        }
+
+        /* Status Colors for Toasts */
+        .toast-success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast-info {
+            border-left: 4px solid #20cfdf;
+        }
+
+        .toast-warning {
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col auth-locked">
+
+    <!-- === 1. AUTH LOCK OVERLAY === -->
+    <div id="auth-lock"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-md transition-opacity duration-500 hidden">
+        <div
+            class="bg-white p-10 rounded-3xl shadow-2xl max-w-md w-full text-center animate-slide-up border border-white/20">
+            <div class="size-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-symbols-outlined text-4xl">lock</span>
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 mb-3">Exklusiv für Mitglieder</h2>
+            <p class="text-slate-500 mb-8 leading-relaxed">
+                Bitte melden Sie sich an, um den Status Ihrer individuellen Kollektion sowie die Sendungsverfolgung
+                einzusehen.
+            </p>
+            <div class="flex flex-col gap-3">
+                <a href="/auth?type=signin"
+                    class="w-full py-4 rounded-xl bg-slate-900 text-white font-bold text-lg hover:bg-primary transition-all shadow-lg hover:shadow-primary/25">
+                    Zum Anzeigen anmelden
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- === 2. MAIN APP CONTENT === -->
+    <div id="app-content" class="blurred transition-all duration-700 flex flex-col min-h-screen">
+
+        <!-- Header -->
+        <header
+            class="bg-white/90 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50 transition-all duration-300">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+
+                <!-- Left: Back Link -->
+                <a href="/"
+                    class="flex items-center gap-2 group text-slate-500 hover:text-primary transition-colors duration-300">
+                    <div class="p-2 rounded-full bg-slate-50 group-hover:bg-primary/10 transition-colors">
+                        <span
+                            class="material-symbols-outlined text-xl group-hover:-translate-x-1 transition-transform duration-300">arrow_back</span>
+                    </div>
+                    <span class="font-bold text-xs uppercase tracking-widest">Zurück zu den Dolls</span>
+                </a>
+
+                <!-- Right: User Toolbar -->
+                <div class="flex items-center gap-4">
+
+                    <!-- User Info Pill -->
+                    <div class="hidden md:flex items-center gap-3 bg-slate-50 pr-5 pl-1 py-1 rounded-full border border-slate-200 shadow-sm"
+                        id="user-header">
+                        <!-- User info injected here by JS -->
+                        <div class="h-8 w-32 bg-slate-200 rounded-full animate-pulse"></div>
+                        <!-- Skeleton Placeholder -->
+                    </div>
+
+                    <!-- Vertical Divider -->
+                    <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+
+                    <!-- Modern Logout Button -->
+                    <button id="btn-logout"
+                        class="group flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-500 font-bold text-xs uppercase tracking-wider hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all duration-300 shadow-sm hover:shadow-md active:scale-95">
+                        <span>Abmelden</span>
+                        <span
+                            class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform duration-300">logout</span>
+                    </button>
+                </div>
+
+            </div>
+        </header>
+
+
+        <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+            <!-- Page Header -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                <div>
+                    <h2 class="text-4xl font-black text-slate-900 font-serif tracking-tight mb-2">Meine Bestellungen
+                    </h2>
+                    <p class="text-slate-500 font-light text-lg">
+                        Verfolgen Sie die Herstellung und Lieferung Ihrer maßgeschneiderten Anfertigungen.
+                    </p>
+                </div>
+                <div class="relative group w-full md:w-auto">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
+                    <input type="text" id="order-search" placeholder="Bestellnummer suchen..."
+                        class="w-full md:w-64 pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm">
+                </div>
+            </div>
+
+            <!-- SKELETON LOADER -->
+            <div id="skeleton-loader" class="space-y-6">
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm animate-pulse h-64"></div>
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm animate-pulse h-64 delay-100">
+                </div>
+            </div>
+
+            <!-- ORDERS CONTAINER -->
+            <div id="orders-container" class="space-y-8 hidden opacity-0 transition-opacity duration-500"></div>
+
+            <!-- EMPTY STATE -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center">
+                <div class="bg-slate-100 p-6 rounded-full mb-6">
+                    <span class="material-symbols-outlined text-4xl text-slate-400">deployed_code</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Keine aktiven Bestellungen gefunden</h3>
+                <p class="text-slate-500 max-w-md mx-auto mb-8">
+                    Sie haben bisher keine Bestellungen aufgegeben. Besuchen Sie das Dashboard, um mit der
+                    Konfiguration Ihres Wunschmodells zu beginnen.
+                </p>
+                <a href="/"
+                    class="px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20">
+                    Kollektion entdecken
+                </a>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- === BANK DETAILS MODAL === -->
+    <div id="bank-modal"
+        class="modal hidden fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
+        <div class="modal-content bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-xl font-black text-slate-900 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">account_balance</span> Bankdaten
+                </h3>
+                <button onclick="document.getElementById('bank-modal').classList.add('hidden')"
+                    class="p-2 hover:bg-slate-200 rounded-full transition-colors"><span
+                        class="material-symbols-outlined">close</span></button>
+            </div>
+
+            <div class="p-6">
+                <!-- Trust Badge -->
+                <div class="flex justify-between items-center mb-6 bg-blue-50 border border-blue-100 p-3 rounded-xl">
+                    <h4 class="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                        <span class="relative flex h-2 w-2">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        Verifiziertes Geschäftskonto
+                    </h4>
+                    <span class="material-symbols-outlined text-blue-400">verified_user</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 1. Recipient Name -->
+                    <div class="field-group col-span-full md:col-span-1">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Empfängername
+                        </p>
+                        <div
+                            class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3 group hover:border-primary/50 transition-all">
+                            <span class="font-mono font-semibold text-slate-900 text-sm truncate">Rahul Sharma</span>
+                            <button onclick="copyToClipboard('Rahul Sharma', this)"
+                                class="text-slate-400 hover:text-primary p-1 rounded transition-all"><span
+                                    class="material-symbols-outlined text-base">content_copy</span></button>
+                        </div>
+                    </div>
+                    <!-- 2. Bank Name -->
+                    <div class="field-group col-span-full md:col-span-1">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Bankname</p>
+                        <div
+                            class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3 group hover:border-primary/50 transition-all">
+                            <span class="font-mono font-medium text-slate-900 text-sm truncate">Punjab National
+                                Bank</span>
+                            <button onclick="copyToClipboard('Punjab National Bank', this)"
+                                class="text-slate-400 hover:text-primary p-1 rounded transition-all"><span
+                                    class="material-symbols-outlined text-base">content_copy</span></button>
+                        </div>
+                    </div>
+                    <!-- 3. Account Number -->
+                    <div class="field-group col-span-full">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Kontonummer
+                        </p>
+                        <div
+                            class="flex items-center justify-between bg-blue-50/50 border border-blue-100 rounded-xl p-3 group hover:border-blue-300 transition-all">
+                            <span class="font-mono font-bold text-lg text-blue-900 tracking-widest">12345678901</span>
+                            <button onclick="copyToClipboard('12345678901', this)"
+                                class="text-blue-400 hover:text-blue-700 p-1 rounded transition-all"><span
+                                    class="material-symbols-outlined text-base">content_copy</span></button>
+                        </div>
+                    </div>
+                    <!-- 4. IFSC -->
+                    <div class="field-group col-span-full md:col-span-1">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">IFSC-Code</p>
+                        <div
+                            class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3 group hover:border-primary/50 transition-all">
+                            <span class="font-mono font-bold text-slate-900 text-sm">PUNB0123456</span>
+                            <button onclick="copyToClipboard('PUNB0123456', this)"
+                                class="text-slate-400 hover:text-primary p-1 rounded transition-all"><span
+                                    class="material-symbols-outlined text-base">content_copy</span></button>
+                        </div>
+                    </div>
+                    <!-- 5. Mobile -->
+                    <div class="field-group col-span-full md:col-span-1">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Mobilnummer
+                        </p>
+                        <div
+                            class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3 group hover:border-primary/50 transition-all">
+                            <span class="font-mono font-medium text-slate-900 text-sm">+919876543210</span>
+                            <button onclick="copyToClipboard('+919876543210', this)"
+                                class="text-slate-400 hover:text-primary p-1 rounded transition-all"><span
+                                    class="material-symbols-outlined text-base">content_copy</span></button>
+                        </div>
+                    </div>
+                    <!-- 6. Reference -->
+                    <div class="field-group col-span-full mt-2">
+                        <div class="flex justify-between items-end mb-1 ml-1">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Zahlungsreferenz</p>
+                            <span class="text-[10px] text-red-500 font-bold bg-red-50 px-2 rounded">WICHTIG</span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-xl p-3 shadow-sm group hover:border-yellow-400 transition-all">
+                            <span class="font-mono font-black text-lg text-slate-900 tracking-wider"
+                                id="dynamic-ref">RS-FAM-2026-XXX</span>
+                            <button onclick="copyRef()"
+                                class="text-yellow-600 hover:text-yellow-800 p-1 rounded transition-all"><span
+                                    class="material-symbols-outlined text-base icon-display">content_copy</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
+        <!-- Toasts will be injected here via JS -->
+    </div>
+
+    <!-- === MODERN FOOTER === -->
+<footer class="bg-slate-900 text-slate-300 border-t border-slate-800 pt-16 pb-8 font-sans">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-20">
+
+            <!-- Top Grid: Brand, Links, Contact -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+
+                <!-- 1. Brand & Promise -->
+                <div class="space-y-6">
+                    <a href="/" class="flex items-center gap-3 group">
+                        <div
+                            class="size-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 group-hover:border-primary/50 transition-colors">
+                            <img src="/static/icons/favicon.svg" alt="Realistix" class="size-6 opacity-90">
+                        </div>
+                        <span class="text-xl font-black text-white tracking-tight font-serif">Realistix Doll</span>
+                    </a>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Handgefertigte TPE- & Silikonkunstwerke. Wir verbinden europäische Design-Standards mit
+                        meisterhafter Handwerkskunst für unvergleichlichen Realismus.
+                    </p>
+                    <div class="flex items-center gap-4 pt-2">
+                        <div
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                            <span class="material-symbols-outlined text-sm">verified_user</span>
+                            Verifizierter Shop
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Customer Care -->
+                <div>
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-primary rounded-full"></span>
+                        Service & Hilfe
+                    </h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="/my-orders"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">chevron_right</span> Meine
+                                Bestellungen</a></li>
+                    </ul>
+                </div>
+
+                <!-- 3. Legal (Rechtliches) -->
+                <div>
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-primary rounded-full"></span>
+                        Rechtliches
+                    </h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="/impressum"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">gavel</span> Impressum</a></li>
+                        <li><a href="/datenschutz"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">policy</span>
+                                Datenschutzerklärung</a></li>
+                        <li><a href="/agb" class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">description</span> AGB</a></li>
+                        <li><a href="/widerruf"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">undo</span> Widerrufsrecht</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 4. Contact & HQ (Transparent Indian Address) -->
+                <div>
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-primary rounded-full"></span>
+                        Atelier & Kontakt
+                    </h4>
+                    <div class="space-y-4 text-sm text-slate-400">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-primary mt-0.5">location_on</span>
+                            <div>
+                                <strong class="text-slate-200 block">Realistix Doll HQ</strong>
+                                <span class="block">Connaught Place</span>
+                                <span class="block">110001 New Delhi, Indien</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">mail</span>
+                            <a href="mailto:support@realistixdoll.com"
+                                class="hover:text-white transition-colors">support@realistixdoll.com</a>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">call</span>
+                            <span>+91 98765 43210</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Middle: Trust & Payment Bar -->
+            <div class="border-t border-slate-800 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
+
+                <!-- Secure Payment -->
+                <div class="flex flex-col items-center md:items-start gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sichere Zahlung</span>
+                    <div
+                        class="flex items-center gap-3 opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
+                        <!-- Using generic SVGs or hosted logos for professionalism -->
+                        <img src="/static/wise.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Wise">
+                        <img src="/static/revolut.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Revolut">
+                        <img src="/static/worldremit.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Visa">
+                        <img src="/static/remitly.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Mastercard">
+                    </div>
+                </div>
+
+                <!-- Global Shipping -->
+                <div class="flex flex-col items-center md:items-end gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Logistikpartner</span>
+                    <div
+                        class="flex items-center gap-3 opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
+                        <img src="https://cdn.worldvectorlogo.com/logos/dhl-1.svg"
+                            class="h-12 w-auto bg-white rounded px-1" alt="DHL">
+                        <img src="https://cdn.worldvectorlogo.com/logos/fedex-express-6.svg"
+                            class="h-12 w-auto bg-white rounded px-1" alt="FedEx">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom: Copyright & Disclaimer -->
+            <div
+                class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+                <p>
+                    &copy; 2026 Realistix Doll S.A. Alle Rechte vorbehalten.
+                    <span class="hidden md:inline mx-2 text-slate-700">|</span>
+                    Operated by Rahul Sharma Enterprises, India.
+                </p>
+                <div class="flex items-center gap-4">
+                    <span class="flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[14px]">lock</span> SSL Verschlüsselt</span>
+                    <span class="flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[14px]">public</span> Globaler Versand</span>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+    <!-- FIREBASE & LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // CONFIG (Your Provided Config)
+        const firebaseConfig = {
+  apiKey: "AIzaSyAf1cpih22DLVpo9umzhLeJWi59pcQwhUQ",
+  authDomain: "realistixdoll.firebaseapp.com",
+  projectId: "realistixdoll",
+  storageBucket: "realistixdoll.firebasestorage.app",
+  messagingSenderId: "797964056076",
+  appId: "1:797964056076:web:6deb911bda83372109e029",
+  measurementId: "G-1GBMKJEV3L"
+};
+
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            try {
+                // Sign out from Firebase
+                await signOut(auth);
+
+                // Optional: Call your backend logout route to clear Flask session
+                await fetch('/logout');
+
+                // Redirect to home with a smooth fade (optional) or immediate redirect
+                window.location.href = "/";
+            } catch (error) {
+                console.error("Logout failed", error);
+                alert("Error logging out. Please try again.");
+            }
+        });
+        // --- 1. AUTH STATE ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Seite entsperren
+                document.getElementById('auth-lock').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('blurred');
+                document.body.classList.remove('auth-locked');
+
+                // Header-Informationen setzen
+                const displayName = user.displayName || user.email.split('@')[0];
+                const photoURL = user.photoURL || `https://ui-avatars.com/api/?name=${displayName}&background=20cfdf&color=fff`;
+
+                document.getElementById('user-header').innerHTML = `
+            <img src="${photoURL}" class="size-8 rounded-full object-cover shadow-sm">
+            <div class="flex flex-col leading-none">
+                <span class="text-xs font-bold text-slate-900">${displayName}</span>
+                <span class="text-[10px] text-slate-400 font-medium tracking-wide">MITGLIED</span>
+            </div>
+        `;
+
+                // Daten laden
+                try {
+                    const token = await user.getIdToken();
+                    await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idToken: token })
+                    });
+
+                    // Jetzt ist es sicher, Bestellungen abzurufen
+                    fetchOrders();
+                } catch (e) {
+                    console.error("Sitzungssynchronisierung fehlgeschlagen", e);
+                }
+            } else {
+                // Seite sperren
+                document.getElementById('auth-lock').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('blurred');
+                document.body.classList.add('auth-locked');
+            }
+        });
+
+
+    </script>
+
+   <script>
+    /* --- CONFIGURATION --- */
+    const EXCHANGE_RATE = 0.86; // USD to EUR conversion
+    const CURRENCY_CONFIG = { minimumFractionDigits: 0, maximumFractionDigits: 0 };
+
+    /* --- HELPERS --- */
+    const fmtUSD = new Intl.NumberFormat('en-US', { ...CURRENCY_CONFIG, style: 'currency', currency: 'USD' });
+    const fmtEUR = new Intl.NumberFormat('de-DE', { ...CURRENCY_CONFIG, style: 'currency', currency: 'EUR' });
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+    }
+
+    // Translation Map for Options
+    const optionTranslations = {
+        "hair-options": "Haaroptionen", "pubic-hair": "Intimbehaarung",
+        "smart-thermostatic-heating": "Smarte Heizung", "speaking": "Sprachfunktion",
+        "eye-color": "Augenfarbe", "hair": "Haare", "shoulder": "Schulter",
+        "simulated-breathing": "Atmung", "removable-tongue": "Zunge",
+        "skin-tone": "Hautton", "breast-type": "Brusttyp", "areola-color": "Warzenhof",
+        "nail-color": "Nagelfarbe", "body-blood-vessel": "Adern",
+        "vagina-type": "Vagina-Typ", "standing-feet": "Stehfüße"
+    };
+
+    /* --- 1. RENDER INDIVIDUAL ITEMS (With Visual Configs) --- */
+    function renderOrderItems(items) {
+        if (!items || items.length === 0) return '';
+
+        return items.map(item => {
+            // Calculate Item Prices
+            const itemPriceUSD = parseFloat(item.price) || 0;
+            const itemPriceEUR = itemPriceUSD * EXCHANGE_RATE;
+
+            // Generate Config Grid (Images + Text)
+            let configHtml = '';
+            if (item.config) {
+                configHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-3">';
+                for (const [key, detail] of Object.entries(item.config)) {
+                    // Filter out empty/default "No" values if desired (optional)
+                    if (detail.value && !detail.value.toLowerCase().includes('nein danke')) {
+                        
+                        // Translate Label
+                        const cleanKey = key.toLowerCase();
+                        let label = optionTranslations[cleanKey] || key.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                        // Clean Value (Remove price tags from string like "+$199")
+                        const valText = detail.value.split('+')[0].trim(); 
+
+                        configHtml += `
+                            <div class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                ${detail.img ? `<img src="${detail.img}" class="size-8 rounded-md object-cover bg-white border border-slate-200 shrink-0">` : ''}
+                                <div class="min-w-0">
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate">${label}</p>
+                                    <p class="text-[10px] font-medium text-slate-700 truncate" title="${valText}">${valText}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                configHtml += '</div>';
+            }
+
+            // HTML for One Item
+            return `
+                <div class="flex flex-col sm:flex-row gap-5 py-6 border-b border-dashed border-slate-100 last:border-0 hover:bg-slate-50/30 transition-colors -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <!-- Main Product Image -->
+                    <div class="shrink-0">
+                        <div class="size-20 sm:size-28 rounded-xl bg-white border border-slate-200 p-1 shadow-sm relative group/img">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover rounded-lg transform group-hover/img:scale-105 transition-transform duration-500">
+                            <span class="absolute -top-2 -right-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">x${item.qty}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Details Column -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
+                            <h4 class="font-bold text-slate-900 text-sm sm:text-base leading-tight line-clamp-2">${item.name}</h4>
+                            
+                            <!-- Item Price (Dual) -->
+                            <div class="text-right shrink-0">
+                                <span class="block font-black text-slate-900 text-sm">${fmtUSD.format(itemPriceUSD)}</span>
+                                <span class="block text-xs font-medium text-primary">${fmtEUR.format(itemPriceEUR)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Config Grid -->
+                        ${configHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /* --- 2. RENDER ORDERS (Main Card) --- */
+ function renderOrders(orders) {
+        console.log("Rendering Orders:", orders);
+        const container = document.getElementById('orders-container');
+        const emptyState = document.getElementById('empty-state');
+
+        // Toggle Empty State
+        if (!orders || orders.length === 0) {
+            if (container) container.innerHTML = "";
+            if (emptyState) emptyState.classList.remove('hidden');
+            return;
+        } else {
+            if (emptyState) emptyState.classList.add('hidden');
+        }
+
+        container.innerHTML = "";
+
+        orders.forEach(order => {
+            // --- 1. CALCULATE TOTALS (Fixes NULL from DB) ---
+            let calculatedTotalUSD = 0;
+            if (order.items && Array.isArray(order.items)) {
+                order.items.forEach(item => {
+                    calculatedTotalUSD += (parseFloat(item.price) || 0) * (item.qty || 1);
+                });
+            }
+            const calculatedTotalEUR = calculatedTotalUSD * EXCHANGE_RATE;
+
+            // --- 2. STATUS LOGIC & TRANSLATION ---
+            // We keep the raw status for logic, but show German text
+            const rawStatus = (order.status || "Pending").toLowerCase();
+            const isPending = rawStatus.includes("pending");
+            
+            // German Display Mapping
+            let displayStatus = "In Bearbeitung";
+            if (rawStatus.includes("pending")) displayStatus = "Verifizierung ausstehend";
+            else if (rawStatus.includes("confirmed")) displayStatus = "Bestätigt & Bezahlt";
+            else if (rawStatus.includes("crafting")) displayStatus = "In Fertigung";
+            else if (rawStatus.includes("quality")) displayStatus = "Qualitätsprüfung";
+            else if (rawStatus.includes("shipped")) displayStatus = "Versendet";
+            else if (rawStatus.includes("delivered")) displayStatus = "Zugestellt";
+            else if (rawStatus.includes("cancel")) displayStatus = "Storniert";
+
+            // Status Badge Colors
+            let badgeClass = "bg-slate-100 text-slate-600 border-slate-200"; 
+            let dotClass = "bg-slate-400";
+
+            if (isPending) {
+                badgeClass = "bg-amber-50 text-amber-600 border-amber-200";
+                dotClass = "bg-amber-500 animate-pulse";
+            } else if (rawStatus.includes('confirmed') || rawStatus.includes('crafting') || rawStatus.includes('quality')) {
+                badgeClass = "bg-blue-50 text-blue-600 border-blue-200";
+                dotClass = "bg-blue-500";
+            } else if (rawStatus.includes('shipped') || rawStatus.includes('delivered')) {
+                badgeClass = "bg-emerald-50 text-emerald-600 border-emerald-200";
+                dotClass = "bg-emerald-500";
+            } else if (rawStatus.includes('cancel')) {
+                badgeClass = "bg-red-50 text-red-600 border-red-200";
+                dotClass = "bg-red-500";
+            }
+
+            // --- 3. PAYMENT ALERT CARD (German Trust Style) ---
+            let paymentAlertHTML = '';
+            if (isPending) {
+                paymentAlertHTML = `
+                <div class="mb-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] relative overflow-hidden">
+                    
+                    <!-- Top Progress Line -->
+                    <div class="absolute top-0 left-0 w-full h-1 bg-slate-100">
+                        <div class="h-full w-1/3 bg-amber-400 rounded-r-full animate-pulse"></div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row items-start gap-5 pt-2">
+                        <!-- Icon -->
+                        <div class="shrink-0 size-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center border border-amber-100 shadow-sm">
+                            <span class="material-symbols-outlined text-2xl">hourglass_top</span>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1">
+                            <h4 class="font-bold text-slate-900 text-base mb-1 flex items-center gap-2">
+                                Zahlungsverifizierung in Bearbeitung
+                            </h4>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                Wir prüfen derzeit Ihren Zahlungseingang. Dieser Vorgang erfolgt manuell und wird in der Regel <strong>innerhalb von 24 Stunden</strong> abgeschlossen.
+                            </p>
+                            
+                            <div class="mt-3 flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                <span class="material-symbols-outlined text-slate-400 text-sm mt-0.5">info</span>
+                                <p class="text-xs text-slate-500">
+                                    <strong>Noch nicht überwiesen?</strong> Bitte nutzen Sie den Button, um die Zahlung jetzt durchzuführen. Die Produktion startet erst nach bestätigtem Geldeingang.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Action -->
+                        <div class="w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                            <button onclick="showBankModal('${order.order_ref}')" class="group w-full md:w-auto px-6 py-3 bg-slate-900 text-white font-bold text-sm rounded-xl hover:bg-primary hover:shadow-lg hover:shadow-primary/25 transition-all flex items-center justify-center gap-3">
+                                <div class="text-left leading-none">
+                                    <span class="block text-[10px] font-medium text-white/70 uppercase mb-0.5">Offener Betrag</span>
+                                    <span>${fmtUSD.format(calculatedTotalUSD)}</span>
+                                </div>
+                                <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // --- 4. RENDER MAIN CARD HTML ---
+            const html = `
+            <div class="bg-white rounded-[1.5rem] p-6 lg:p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_10px_40px_rgb(0,0,0,0.06)] transition-all duration-500 animate-slide-up mb-8 relative overflow-hidden group/card">
+                
+                <!-- HEADER: Ref & Totals -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 pb-6 border-b border-slate-100">
+                    <div class="flex gap-4 w-full">
+                        <!-- Icon -->
+                        <div class="size-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                            <span class="material-symbols-outlined">receipt_long</span>
+                        </div>
+                        
+                        <!-- Info -->
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 class="font-serif font-black text-xl md:text-2xl text-slate-900 tracking-tight">
+                                    #${order.order_ref || order.id}
+                                </h3>
+                                <!-- Status Badge -->
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${badgeClass}">
+                                    <span class="size-1.5 rounded-full ${dotClass}"></span>
+                                    ${displayStatus}
+                                </span>
+                            </div>
+                            
+                            <!-- Date & Dual Price -->
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-slate-500 font-medium">
+                                <span class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">calendar_today</span> 
+                                    ${formatDate(order.created_at)}
+                                </span>
+                                <span class="hidden sm:inline text-slate-300">|</span>
+                                <span class="flex items-baseline gap-1.5">
+                                    Gesamt: 
+                                    <span class="text-slate-900 font-bold text-sm">${fmtUSD.format(calculatedTotalUSD)}</span>
+                                    <span class="text-slate-300">/</span>
+                                    <span class="text-primary font-bold">${fmtEUR.format(calculatedTotalEUR)}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions Buttons -->
+                    <div class="flex gap-2 w-full md:w-auto shrink-0">
+                        <button class="flex-1 md:flex-none px-4 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">description</span> Rechnung
+                        </button>
+                        <button class="flex-1 md:flex-none px-4 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">support_agent</span> Hilfe
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ALERTS -->
+                ${paymentAlertHTML}
+
+                <!-- ITEMS LIST -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-3 mb-4">
+                         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Produktdetails</span>
+                         <div class="h-px flex-1 bg-slate-100"></div>
+                    </div>
+                    ${renderOrderItems(order.items)}
+                </div>
+
+                <!-- TIMELINE -->
+                <div class="bg-slate-50/50 rounded-2xl p-6 border border-slate-100/50">
+                    <div class="flex items-center gap-2 mb-6">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Bestellstatus</span>
+                    </div>
+                    ${renderTimeline(order.status)} 
+                </div>
+
+            </div>`;
+
+            container.innerHTML += html;
+        });
+    }
+    /* --- 3. TIMELINE COMPONENT --- */
+   /* --- 3. TIMELINE COMPONENT (FIXED) --- */
+function renderTimeline(dbStatus) {
+    // 1. Define the visible steps in German
+    const steps = [
+        { icon: "check_circle", label: "Bestätigt" },      // Confirmed
+        { icon: "precision_manufacturing", label: "Fertigung" }, // Crafting
+        { icon: "verified", label: "Qualitätsprüfung" },   // Quality Check
+        { icon: "local_shipping", label: "Versand" },      // Shipped
+        { icon: "home", label: "Zugestellt" }              // Delivered
+    ];
+
+    // 2. Normalize Status (Handle Case Sensitivity & Admin Terms)
+    const status = (dbStatus || "").toLowerCase().trim();
+
+    // 3. Handle Special Case: Cancelled
+    if (status.includes('cancel')) {
+        return `
+            <div class="w-full py-6 flex flex-col items-center justify-center text-red-500 bg-red-50 rounded-xl border border-red-100">
+                <span class="material-symbols-outlined text-3xl mb-2">cancel</span>
+                <span class="font-bold uppercase tracking-widest text-xs">Bestellung Storniert</span>
+            </div>
+        `;
+    }
+
+    // 4. Map Admin Status to Timeline Step Index
+    let activeIndex = -1; // Default (Pending)
+
+    if (status.includes('pending')) activeIndex = -1;       // Before Step 1
+    else if (status.includes('confirmed')) activeIndex = 0; // Step 1
+    else if (status.includes('crafting')) activeIndex = 1;  // Step 2
+    else if (status.includes('quality')) activeIndex = 2;   // Step 3
+    else if (status.includes('shipped')) activeIndex = 3;   // Step 4
+    else if (status.includes('delivered')) activeIndex = 4; // Step 5
+
+    // 5. Calculate Bar Width
+    // If activeIndex is -1 (Pending), width is 0%. Max is 100%.
+    const progressPct = activeIndex >= 0 ? (activeIndex * (100 / (steps.length - 1))) : 0;
+
+    // 6. Generate HTML for Dots
+    const stepsHTML = steps.map((step, idx) => {
+        const isCompleted = idx <= activeIndex;
+        const isCurrent = idx === activeIndex;
+
+        // Styling Logic
+        let iconClass = "bg-white border-slate-200 text-slate-300"; // Default (Future)
+        let labelClass = "text-slate-300";
+
+        if (isCompleted) {
+            // Completed or Current
+            iconClass = "bg-primary border-primary text-white shadow-md shadow-primary/30 scale-110";
+            labelClass = "text-primary font-bold";
+        }
+        
+        if (isCurrent) {
+            // Pulse effect for current step
+            iconClass += " ring-4 ring-primary/20 animate-pulse";
+        }
+
+        return `
+            <div class="relative z-10 flex flex-col items-center group/step" style="width: 40px">
+                <div class="size-8 sm:size-10 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${iconClass}">
+                    <span class="material-symbols-outlined text-[16px] sm:text-[20px]">
+                        ${isCompleted ? (idx < activeIndex ? 'check' : step.icon) : step.icon}
+                    </span>
+                </div>
+                <span class="absolute -bottom-8 text-[9px] sm:text-[10px] uppercase tracking-wide whitespace-nowrap transition-colors duration-300 ${labelClass}">
+                    ${step.label}
+                </span>
+            </div>
+        `;
+    }).join('');
+
+    // 7. Return Final Timeline HTML
+    return `
+        <div class="w-full py-4 px-2 sm:px-6 select-none mt-4 mb-2">
+            <div class="relative">
+                <!-- Gray Background Line -->
+                <div class="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2 rounded-full overflow-hidden"></div>
+                
+                <!-- Colored Progress Line -->
+                <div class="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_10px_rgba(32,207,223,0.5)] transition-all duration-1000 ease-out" style="width: ${progressPct}%"></div>
+                
+                <!-- Icons/Dots -->
+                <div class="flex justify-between items-center relative w-full h-10 sm:h-12">
+                    ${stepsHTML}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+    /* --- 4. FETCH DATA --- */
+    let allOrders = [];
+
+    async function fetchOrders() {
+        try {
+            const response = await fetch('/api/my-orders'); 
+            if (!response.ok) throw new Error('Auth Error');
+
+            const data = await response.json();
+            allOrders = data;
+
+            // Animate In
+            setTimeout(() => {
+                document.getElementById('skeleton-loader').style.display = 'none';
+                const container = document.getElementById('orders-container');
+                container.classList.remove('hidden');
+                setTimeout(() => container.classList.remove('opacity-0'), 50);
+
+                renderOrders(allOrders);
+                checkStatusUpdates(allOrders);
+            }, 600);
+        } catch (err) {
+            console.error(err);
+            document.getElementById('skeleton-loader').innerHTML = `<p class="text-center text-red-500 py-8">Laden fehlgeschlagen. Bitte neu laden.</p>`;
+        }
+    }
+
+    /* --- 5. INTERACTION & MODAL FUNCTIONS --- */
+
+    // 1. Show Bank Modal
+    window.showBankModal = function(refId) {
+        // Set the Order Reference in the modal
+        const refElement = document.getElementById('dynamic-ref');
+        if (refElement) {
+            refElement.innerText = refId || '---';
+        }
+        
+        // Show the modal
+        const modal = document.getElementById('bank-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Optional: Add animation class if you have one defined
+            const content = modal.querySelector('.modal-content');
+            if(content) content.classList.add('animate-slide-up');
+        }
+    };
+
+    // 2. Generic Copy Function (Used by address/bank copy buttons)
+    window.copyToClipboard = async function(text, btnElement) {
+        try {
+            await navigator.clipboard.writeText(text);
+            
+            // Visual Feedback
+            if (btnElement) {
+                const originalHTML = btnElement.innerHTML;
+                const originalClasses = btnElement.className;
+                
+                // Success State
+                btnElement.innerHTML = '<span class="material-symbols-outlined text-base">check</span>';
+                btnElement.classList.add('text-green-500', 'bg-green-50', 'border-green-200');
+                
+                // Revert after 1.5s
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                    btnElement.className = originalClasses;
+                }, 1500);
+            }
+        } catch (err) {
+            console.error("Copy failed:", err);
+            alert("Kopieren fehlgeschlagen. Bitte manuell kopieren.");
+        }
+    };
+
+    // 3. Copy Reference Function (Specific for the yellow box)
+    window.copyRef = function() {
+        const refText = document.getElementById('dynamic-ref').innerText;
+        // Find the button next to the reference ID
+        const btn = document.querySelector('button[onclick="copyRef()"]');
+        window.copyToClipboard(refText, btn);
+    };
+
+    /* --- 6. TOAST NOTIFICATIONS (For Status Updates) --- */
+
+    function showToast(title, message, type = 'info', image = null) {
+        const container = document.getElementById('toast-container');
+        if(!container) return;
+
+        const toast = document.createElement('div');
+        
+        // Colors based on type
+        const colors = type === 'success' ? 'border-green-500 bg-green-50' : 'border-primary bg-blue-50';
+        const icon = type === 'success' ? 'check_circle' : 'info';
+
+        toast.className = `flex items-start gap-4 p-4 w-80 md:w-96 bg-white border-l-4 ${colors} shadow-2xl rounded-r-xl rounded-l-sm animate-slide-up transition-all relative pointer-events-auto`;
+
+        toast.innerHTML = `
+            <div class="shrink-0">
+                ${image 
+                    ? `<img src="${image}" class="size-10 rounded-lg object-cover shadow-sm">` 
+                    : `<span class="material-symbols-outlined text-2xl ${type === 'success' ? 'text-green-600' : 'text-primary'}">${icon}</span>`
+                }
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-slate-900 text-sm mb-0.5">${title}</h4>
+                <p class="text-xs text-slate-500 leading-snug">${message}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-slate-300 hover:text-slate-500">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        `;
+
+        container.appendChild(toast);
+
+        // Remove after 6 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 500);
+        }, 6000);
+    }
+
+    // Helper: Check for Status Updates (Logic from previous request)
+    function checkStatusUpdates(orders) {
+        const storedData = JSON.parse(localStorage.getItem('orderStatusHistory')) || {};
+        let hasUpdates = false;
+
+        orders.forEach(order => {
+            const orderKey = order.orderRef || order.id;
+            const lastStatus = storedData[orderKey];
+            const currentStatus = order.status;
+
+            // Only show toast if status CHANGED and is valid
+            if (currentStatus && lastStatus && currentStatus !== lastStatus) {
+                let title = "", msg = "", type = "info";
+                const productName = order.items && order.items[0] ? order.items[0].name : "Bestellung";
+                const productImg = order.items && order.items[0] ? order.items[0].image : null;
+
+                if (currentStatus.includes('Crafting') || currentStatus.includes('Fertigung')) {
+                    title = "Fertigung gestartet 🎨";
+                    msg = `Wir haben mit der Arbeit an Ihrer Bestellung begonnen.`;
+                } else if (currentStatus.includes('Shipped') || currentStatus.includes('Versendet')) {
+                    title = "Versand bestätigt 🚚";
+                    msg = "Ihr Paket ist unterwegs!";
+                    type = "success";
+                } else if (currentStatus.includes('Confirmed') || currentStatus.includes('Bestätigt')) {
+                    title = "Zahlung erhalten ✅";
+                    msg = "Vielen Dank! Ihre Zahlung wurde verifiziert.";
+                    type = "success";
+                }
+
+                if (title) {
+                    setTimeout(() => showToast(title, msg, type, productImg), hasUpdates ? 1000 : 500);
+                    hasUpdates = true;
+                }
+            }
+            // Update storage
+            storedData[orderKey] = currentStatus;
+        });
+
+        localStorage.setItem('orderStatusHistory', JSON.stringify(storedData));
+    }
+    // Helper: Toast & Status Check (Preserved)
+    function checkStatusUpdates(orders) {
+        const storedData = JSON.parse(localStorage.getItem('orderStatusHistory')) || {};
+        let hasUpdates = false;
+
+        orders.forEach(order => {
+            const orderKey = order.orderRef || order.id;
+            const lastStatus = storedData[orderKey];
+            const currentStatus = order.status;
+
+            if (currentStatus && currentStatus !== lastStatus) {
+                // ... (Keep existing toast logic here if needed, or simplify)
+                storedData[orderKey] = currentStatus;
+            }
+        });
+        localStorage.setItem('orderStatusHistory', JSON.stringify(storedData));
+    }
+</script>
+</body>
+
+</html>

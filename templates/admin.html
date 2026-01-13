@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistix Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .json-editor { font-family: monospace; font-size: 12px; white-space: pre; }
+    </style>
+    
+    <style>
+        /* Table Cell Styles */
+.item-card { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+.item-card:last-child { border-bottom: none; }
+.option-badge { 
+    display: inline-flex; align-items: center; gap: 4px; 
+    padding: 2px 8px; border-radius: 6px; 
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; margin-top: 4px;
+}
+.price-tag { font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden flex" style="display: none;" id="app-body">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shrink-0 transition-all duration-300" id="sidebar">
+        <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+            <div class="size-8 bg-primary rounded-lg flex items-center justify-center font-bold text-slate-900">A</div>
+            <h1 class="font-bold text-lg">Admin Panel</h1>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="showSection('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors text-slate-300 hover:text-white">
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
+            </button>
+            <button onclick="showSection('orders')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors text-slate-300 hover:text-white bg-slate-800 text-white">
+                <span class="material-symbols-outlined">shopping_cart</span> Orders
+            </button>
+            <button onclick="showSection('products')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors text-slate-300 hover:text-white">
+                <span class="material-symbols-outlined">inventory_2</span> Products
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="window.location.href='/'" class="w-full flex items-center justify-center gap-2 text-sm text-slate-400 hover:text-white">
+                <span class="material-symbols-outlined text-sm">logout</span> Exit
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-8 shrink-0">
+            <h2 class="text-xl font-bold text-gray-800" id="page-title">Overview</h2>
+            <button onclick="refreshData()" class="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors" title="Refresh Data">
+                <span class="material-symbols-outlined">refresh</span>
+            </button>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-8" id="content-area">
+            
+            <!-- SECTION: ORDERS -->
+            <div id="view-orders" class="section-view">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-bold">
+                            <tr>
+                                <th class="p-4 border-b">Ref / Date</th>
+                                <th class="p-4 border-b">Customer</th>
+                                <th class="p-4 border-b">Items</th>
+                                <th class="p-4 border-b">Total</th>
+                                <th class="p-4 border-b">Status</th>
+                                <th class="p-4 border-b text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body" class="text-sm text-gray-700 divide-y divide-gray-100">
+                            <!-- Injected JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION: PRODUCTS -->
+            <div id="view-products" class="section-view hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="products-grid">
+                    <!-- Injected JS -->
+                </div>
+            </div>
+
+            <!-- SECTION: DASHBOARD -->
+            <div id="view-dashboard" class="section-view hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <div class="text-gray-400 text-xs font-bold uppercase">Total Revenue</div>
+                        <div class="text-3xl font-black text-slate-900 mt-2" id="stat-revenue">$0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <div class="text-gray-400 text-xs font-bold uppercase">Total Orders</div>
+                        <div class="text-3xl font-black text-slate-900 mt-2" id="stat-orders">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <div class="text-gray-400 text-xs font-bold uppercase">Pending Verification</div>
+                        <div class="text-3xl font-black text-amber-500 mt-2" id="stat-pending">0</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL: ORDER DETAILS -->
+    <div id="modal-order" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-lg">Edit Order</h3>
+                <button onclick="closeModal('modal-order')" class="text-gray-400 hover:text-gray-600"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-8 overflow-y-auto space-y-6">
+                <input type="hidden" id="edit-order-ref">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
+                        <select id="edit-order-status" class="w-full rounded-lg border-gray-300 text-sm">
+                            <option value="Pending Verification">Pending Verification</option>
+                            <option value="Confirmed">Confirmed (Paid)</option>
+                            <option value="Crafting">Crafting / Production</option>
+                            <option value="Quality Check">Quality Check</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Amount</label>
+                        <input type="text" id="edit-order-total" class="w-full rounded-lg border-gray-300 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Transaction ID / Proof</label>
+                    <input type="text" id="edit-order-tx" class="w-full rounded-lg border-gray-300 text-sm">
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Shipping Details</h4>
+                    <pre id="display-shipping" class="text-sm text-gray-700 whitespace-pre-wrap"></pre>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Items</h4>
+                    <div id="display-items" class="space-y-2"></div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 text-right flex justify-end gap-3">
+                <button onclick="deleteOrder()" class="px-4 py-2 text-red-600 font-bold hover:bg-red-50 rounded-lg transition">Delete Order</button>
+                <button onclick="saveOrder()" class="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PRODUCT EDIT -->
+    <div id="modal-product" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-lg">Edit Product</h3>
+                <button onclick="closeModal('modal-product')" class="text-gray-400 hover:text-gray-600"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-8 overflow-y-auto space-y-6">
+                <input type="hidden" id="edit-prod-id">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Name</label>
+                        <input type="text" id="edit-prod-name" class="w-full rounded-lg border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Price (USD)</label>
+                        <input type="number" id="edit-prod-price" class="w-full rounded-lg border-gray-300 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">URL Slug</label>
+                    <input type="text" id="edit-prod-url" class="w-full rounded-lg border-gray-300 text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 h-96">
+                    <div class="flex flex-col h-full">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Meta JSON (Grid View)</label>
+                        <textarea id="edit-prod-meta" class="w-full flex-1 rounded-lg border-gray-300 text-xs font-mono"></textarea>
+                    </div>
+                    <div class="flex flex-col h-full">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Detail JSON (Product Page)</label>
+                        <textarea id="edit-prod-detail" class="w-full flex-1 rounded-lg border-gray-300 text-xs font-mono"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 text-right">
+                <button onclick="saveProduct()" class="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        let DATA = { products: [], orders: [] };
+
+        // --- 1. INITIALIZATION & LOGIN ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pwd = prompt("🔐 Admin Access Required\nEnter Password:");
+            
+            if(!pwd) { window.location.href = '/'; return; }
+
+            try {
+                const res = await fetch('/admin-login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password: pwd})
+                });
+
+                if(res.ok) {
+                    document.getElementById('app-body').style.display = 'flex';
+                    refreshData();
+                } else {
+                    alert("Wrong Password");
+                    window.location.href = '/';
+                }
+            } catch(e) {
+                alert("Server Error");
+            }
+        });
+
+        async function refreshData() {
+            try {
+                const res = await fetch('/api/admin/get-all');
+                const data = await res.json();
+                DATA = data;
+                renderOrders();
+                renderProducts();
+                renderStats();
+            } catch(e) { console.error(e); }
+        }
+
+        // --- 2. RENDERERS ---
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-table-body');
+            tbody.innerHTML = DATA.orders.map(o => {
+                const date = new Date(o.created_at).toLocaleDateString('de-DE');
+                const itemNames = o.items_json.map(i => i.name.substring(0, 30) + '...').join(', ');
+                
+                let statusColor = 'bg-gray-100 text-gray-600';
+                if(o.status.includes('Pending')) statusColor = 'bg-amber-100 text-amber-700';
+                if(o.status.includes('Confirmed') || o.status.includes('Crafting')) statusColor = 'bg-blue-100 text-blue-700';
+                if(o.status.includes('Shipped')) statusColor = 'bg-green-100 text-green-700';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4">
+                            <div class="font-bold text-slate-900">${o.order_ref}</div>
+                            <div class="text-xs text-slate-400">${date}</div>
+                        </td>
+                        <td class="p-4">
+                            <div class="font-bold">${o.shipping_json.firstName} ${o.shipping_json.lastName}</div>
+                            <div class="text-xs text-slate-400">${o.email}</div>
+                        </td>
+                        <td class="p-4 text-xs max-w-xs truncate" title="${itemNames}">
+                            ${itemNames}
+                            <span class="block text-slate-400 mt-1">${o.items_json.length} Item(s)</span>
+                        </td>
+                        <td class="p-4 font-mono font-bold">${o.total_amount || '---'}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${statusColor}">${o.status}</span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="editOrder('${o.order_ref}')" class="text-primary hover:text-slate-900 font-bold text-xs border border-primary/30 px-3 py-1.5 rounded hover:bg-primary/10">Edit</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = DATA.products.map(p => `
+                <div class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition">
+                    <div class="flex items-start gap-4">
+                        <div class="size-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                            ${p.meta_json.gallery ? `<img src="${p.meta_json.gallery[0]}" class="w-full h-full object-cover">` : ''}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-bold text-sm text-slate-900 truncate">${p.name}</h4>
+                            <p class="text-xs text-slate-500 mt-1">$${p.price}</p>
+                        </div>
+                    </div>
+                    <button onclick="editProduct('${p.id}')" class="mt-4 w-full py-2 rounded-lg bg-gray-50 text-slate-600 text-xs font-bold hover:bg-slate-900 hover:text-white transition">Manage Data</button>
+                </div>
+            `).join('');
+        }
+
+        function renderStats() {
+            let totalRev = 0;
+            let pendingCount = 0;
+            
+            DATA.orders.forEach(o => {
+                if(o.total_amount) {
+                    const price = parseFloat(String(o.total_amount).replace(/[^0-9.]/g, ''));
+                    if(!isNaN(price)) totalRev += price;
+                }
+                if(o.status.includes('Pending')) pendingCount++;
+            });
+
+            document.getElementById('stat-revenue').innerText = "$" + totalRev.toLocaleString();
+            document.getElementById('stat-orders').innerText = DATA.orders.length;
+            document.getElementById('stat-pending').innerText = pendingCount;
+        }
+
+        // --- 3. ACTIONS ---
+
+        function editOrder(ref) {
+            const order = DATA.orders.find(o => o.order_ref === ref);
+            if(!order) return;
+
+            document.getElementById('edit-order-ref').value = order.order_ref;
+            document.getElementById('edit-order-status').value = order.status;
+            document.getElementById('edit-order-total').value = order.total_amount;
+            document.getElementById('edit-order-tx').value = order.transaction_id || '';
+            
+            // Nice Display for JSON data
+            document.getElementById('display-shipping').innerText = JSON.stringify(order.shipping_json, null, 2);
+            document.getElementById('display-items').innerHTML = order.items_json.map(i => `
+                <div class="text-xs border-b border-gray-100 pb-2 mb-2">
+                    <strong>${i.name}</strong><br>
+                    Config: ${Object.keys(i.config || {}).length} options selected
+                </div>
+            `).join('');
+
+            // Link to Proof if it's an Image
+            if(order.transaction_id && order.transaction_id.includes('static/proofs')) {
+                 document.getElementById('edit-order-tx').insertAdjacentHTML('afterend', 
+                    `<a href="${order.transaction_id}" target="_blank" class="block mt-2 text-xs text-blue-500 underline">View Proof Image</a>`
+                 );
+            }
+
+            openModal('modal-order');
+        }
+
+        function editProduct(id) {
+            const prod = DATA.products.find(p => p.id === id);
+            if(!prod) return;
+
+            document.getElementById('edit-prod-id').value = prod.id;
+            document.getElementById('edit-prod-name').value = prod.name;
+            document.getElementById('edit-prod-price').value = prod.price;
+            document.getElementById('edit-prod-url').value = prod.url;
+            
+            // Pretty Print JSON for editing
+            document.getElementById('edit-prod-meta').value = JSON.stringify(prod.meta_json, null, 4);
+            document.getElementById('edit-prod-detail').value = JSON.stringify(prod.detail_json, null, 4);
+
+            openModal('modal-product');
+        }
+
+        async function saveOrder() {
+            const payload = {
+                order_ref: document.getElementById('edit-order-ref').value,
+                status: document.getElementById('edit-order-status').value,
+                total_amount: document.getElementById('edit-order-total').value,
+                transaction_id: document.getElementById('edit-order-tx').value
+            };
+
+            await fetch('/api/admin/order/update', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            closeModal('modal-order');
+            refreshData();
+        }
+
+        async function deleteOrder() {
+            if(!confirm("Are you sure? This cannot be undone.")) return;
+            const ref = document.getElementById('edit-order-ref').value;
+             await fetch('/api/admin/order/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({order_ref: ref})
+            });
+            closeModal('modal-order');
+            refreshData();
+        }
+
+        async function saveProduct() {
+            try {
+                const payload = {
+                    id: document.getElementById('edit-prod-id').value,
+                    name: document.getElementById('edit-prod-name').value,
+                    price: parseFloat(document.getElementById('edit-prod-price').value),
+                    url: document.getElementById('edit-prod-url').value,
+                    meta_json: JSON.parse(document.getElementById('edit-prod-meta').value),
+                    detail_json: JSON.parse(document.getElementById('edit-prod-detail').value)
+                };
+
+                const res = await fetch('/api/admin/product/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                if(res.ok) {
+                    closeModal('modal-product');
+                    refreshData();
+                } else {
+                    alert("Failed to save. Check your JSON syntax.");
+                }
+            } catch(e) {
+                alert("Invalid JSON format in text areas.");
+            }
+        }
+
+        // --- 4. UTILS ---
+        function showSection(id) {
+            document.querySelectorAll('.section-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            
+            const titles = { dashboard: 'Dashboard', orders: 'Order Management', products: 'Product Catalog' };
+            document.getElementById('page-title').innerText = titles[id];
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Start on Orders
+        showSection('orders');
+
+    </script>
+</body>
+</html>

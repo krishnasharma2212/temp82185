@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html class="light" lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{{product['name']}} - Realistix Doll</title>
+
+    <link rel="icon" type="image/png" href="/static/icons/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/static/icons/favicon.svg" />
+    <link rel="shortcut icon" href="/static/icons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Realistix Doll" />
+    <link rel="manifest" href="/static/icons/site.webmanifest" />
+
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#20cfdf",
+                        "primary-dark": "#1697a3",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                        "surface": "#ffffff"
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 1.5s infinite linear',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards'
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .material-symbols-outlined.fill-1 {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Option Selection Styling */
+        .option-radio:checked+.option-card {
+            border-color: #20cfdf;
+            background-color: #f0fdfe;
+            box-shadow: 0 4px 6px -1px rgba(32, 207, 223, 0.1), 0 2px 4px -1px rgba(32, 207, 223, 0.06);
+        }
+
+        .option-radio:checked+.option-card .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Skeleton Shimmer */
+        .skeleton {
+            background: #f1f5f9;
+            background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%);
+            background-repeat: no-repeat;
+            background-size: 1000px 100%;
+            animation: shimmer 1.5s infinite linear forwards;
+        }
+
+        /* Zoom Lens */
+        .zoom-container {
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .zoom-img {
+            transition: transform 0.15s ease-out;
+            transform-origin: center center;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light text-slate-900 antialiased selection:bg-primary/20">
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed top-8 left-8 z-[100] translate-y-24 opacity-0 transition-all duration-500 flex items-center gap-4 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl shadow-slate-900/20">
+        <div class="bg-green-500 rounded-full p-1">
+            <span class="material-symbols-outlined text-sm font-bold text-white">check</span>
+        </div>
+        <div>
+            <h4 class="font-bold text-sm">Zum Warenkorb hinzugefügt</h4>
+            <p class="text-xs text-slate-400">Ihre individuelle Konfiguration wurde gespeichert.</p>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-overlay"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] hidden transition-opacity opacity-0"
+        onclick="toggleCart(false)"></div>
+    <aside id="cart-sidebar"
+        class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-[70] shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div
+            class="p-6 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">shopping_bag</span>
+                <h2 class="text-lg font-bold">Ihr Warenkorb (<span id="cart-count-header">0</span>)</h2>
+            </div>
+            <button onclick="toggleCart(false)"
+                class="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+            <!-- Items Injected Here -->
+        </div>
+        <div class="p-6 border-t border-slate-100 bg-slate-50">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-slate-500 font-medium">Zwischensumme</span>
+                <span id="cart-total" class="text-2xl font-black text-slate-900">$0.00</span>
+            </div>
+            <button onclick="window.location.href='/checkout'"
+                class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-primary transition-colors shadow-lg hover:shadow-primary/25">
+                Sicher zur Kasse
+            </button>
+        </div>
+    </aside>
+
+
+    <!-- Header -->
+    <header
+        class="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="size-8 text-primary transition-transform duration-500 group-hover:rotate-12">
+                    <img src="/static/icons/favicon.svg" alt="Realistix Doll">
+                </div>
+                <h1 class="text-2xl font-black tracking-tighter text-slate-900">Realistix Doll</h1>
+            </a>
+
+            <!-- Right Actions -->
+            <div class="flex items-center gap-6">
+                <!-- Auth Container (Populated by JS) -->
+                <div id="header-auth-actions" class="hidden md:flex items-center gap-4 transition-opacity duration-500">
+                    <div class="w-24 h-8 bg-slate-100 rounded animate-pulse"></div>
+                </div>
+
+                <!-- Cart -->
+                <button onclick="toggleCart(true)"
+                    class="relative p-2 hover:bg-slate-100 rounded-xl transition-colors group">
+                    <span
+                        class="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors">shopping_cart</span>
+                    <span id="cart-badge"
+                        class="absolute -top-1 -right-1 size-5 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center scale-0 transition-transform shadow-sm">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1440px] mx-auto min-h-screen pb-24">
+
+        <!-- Breadcrumb -->
+        <div class="px-6 lg:px-20 py-6 text-sm text-slate-400 flex items-center gap-2">
+            <a href="/" class="hover:text-primary transition-colors">Startseite</a>
+            <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+            <span class="text-slate-800 font-medium">Produktdetails</span>
+        </div>
+
+        <!-- === LOADING SKELETON (Visible Initially) === -->
+        <div id="loading-skeleton" class="px-6 lg:px-20 flex flex-col lg:flex-row gap-16 animate-fade-in">
+            <!-- Left Skeleton -->
+            <div class="w-full lg:w-[55%] space-y-6">
+                <div class="skeleton w-full aspect-[2/3] rounded-3xl"></div>
+                <div class="flex gap-4">
+                    <div class="skeleton size-24 rounded-xl"></div>
+                    <div class="skeleton size-24 rounded-xl"></div>
+                    <div class="skeleton size-24 rounded-xl"></div>
+                </div>
+            </div>
+            <!-- Right Skeleton -->
+            <div class="w-full lg:w-[45%] space-y-8">
+                <div class="space-y-4">
+                    <div class="skeleton h-10 w-3/4 rounded-lg"></div>
+                    <div class="skeleton h-6 w-1/4 rounded-lg"></div>
+                </div>
+                <div class="space-y-4">
+                    <div class="skeleton h-24 w-full rounded-2xl"></div>
+                    <div class="skeleton h-24 w-full rounded-2xl"></div>
+                    <div class="skeleton h-24 w-full rounded-2xl"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === REAL CONTENT (Hidden Initially) === -->
+       <!-- === REAL CONTENT (Hidden Initially) === -->
+<div id="product-content"
+    class="hidden opacity-0 transition-opacity duration-700 px-6 lg:px-20 flex flex-col lg:flex-row gap-16">
+
+    <!-- LEFT: Gallery ONLY -->
+    <div class="w-full lg:w-[55%]">
+        <div class="sticky top-28 space-y-6">
+            <!-- Main Image with Zoom -->
+            <div class="relative w-full aspect-[2/3] bg-white rounded-3xl overflow-hidden shadow-sm group border border-slate-100 cursor-crosshair"
+                id="zoom-container" onmousemove="zoom(event)" onmouseleave="resetZoom()">
+                <img id="main-image" src="" class="w-full h-full object-cover zoom-img"
+                    alt="Realistische Premium-Puppe">
+
+                <!-- Badges -->
+                <div class="absolute top-6 left-6 z-10 flex flex-col gap-2">
+                    <span
+                        class="bg-slate-900/90 backdrop-blur text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">Luxus-Serie</span>
+                </div>
+            </div>
+
+            <!-- Thumbnails -->
+            <div class="flex gap-4 overflow-x-auto py-2 scrollbar-hide snap-x" id="gallery-thumbs">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Details, Config & Trust Info -->
+    <div class="w-full lg:w-[45%]">
+
+        <!-- Title Block -->
+        <div class="flex flex-col gap-3 mb-8 border-b border-slate-100 pb-6">
+            <h1 id="product-title"
+                class="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight"></h1>
+            <div class="flex items-center gap-4 text-sm mt-2">
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-xs">Auf Lager</span>
+                <div class="flex text-yellow-400 text-lg">★★★★★</div>
+                <span class="text-slate-400">4.9</span>
+            </div>
+        </div>
+
+        <!-- Customization Form (NOW APPEARS FIRST) -->
+        <form id="customization-form" class="flex flex-col gap-10 mb-12">
+            <!-- Dynamic Options injected via JS -->
+        </form>
+
+        <!-- Info Box (MOVED HERE - APPEARS AFTER CONFIG) -->
+        <div class="bg-slate-50 rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-5 text-primary">
+                <span class="material-symbols-outlined text-2xl">verified_user</span>
+                <span class="font-bold text-sm tracking-wide uppercase">
+                    Qualitäts- & Handwerksgarantie
+                </span>
+            </div>
+
+            <!-- Trust Content -->
+            <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                Jede Realistix Doll wird <strong>individuell von Hand</strong> in unserem europäischen
+                Atelier gefertigt.
+                Dabei verwenden wir ausschließlich <strong>medizinisches TPE oder Platin-Silikon</strong>,
+                um höchste Realitätsnähe, Langlebigkeit und hautverträglichen Komfort zu gewährleisten.
+                <br><br>
+                Jede Puppe durchläuft eine <strong>mehrstufige Qualitätskontrolle</strong> und wird mit
+                einer <strong>1-jährigen Garantie</strong> auf Gelenke, Skelett und strukturelle Komponenten
+                ausgeliefert.
+            </p>
+
+            <!-- Customization Highlights -->
+            <div class="bg-white rounded-xl p-4 border border-slate-100 mb-6">
+                <div class="flex items-center gap-2 mb-3 text-slate-900">
+                    <span class="material-symbols-outlined text-primary text-lg">tune</span>
+                    <span class="font-bold text-sm uppercase tracking-wide">
+                        Vollständig individualisierbar (20+ Anpassungen)
+                    </span>
+                </div>
+                <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600">
+                    <li>• Gesichtszüge & Mimik</li>
+                    <li>• Körperform & Proportionen</li>
+                    <li>• Hautfarbe & Hautstruktur</li>
+                    <li>• Augenfarbe & Augenstil</li>
+                    <li>• Haartyp, Farbe & Länge</li>
+                    <li>• Make-up & Details</li>
+                    <li>• Skelett & Beweglichkeit</li>
+                    <li>• Intime Konfigurationen</li>
+                    <li class="col-span-2 text-slate-500 italic">
+                        …und viele weitere individuelle Anpassungsmöglichkeiten
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Trust Badges -->
+            <div class="flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
+                <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-primary text-sm">local_shipping</span>
+                    100 % diskrete Verpackung
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-primary text-sm">lock</span>
+                    Private & sichere Bestellung
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-primary text-sm">verified</span>
+                    EU-Qualitätsstandards
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+        <!-- Sticky Footer Action Bar -->
+        <!-- Sticky Footer Action Bar -->
+        <div id="action-bar"
+            class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 z-40 translate-y-full transition-transform duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+            <div
+                class="max-w-[1440px] mx-auto px-6 lg:px-20 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+
+                <div class="flex flex-col justify-center animate-fade-in text-center md:text-left">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Gesamtpreis
+                        (Total)</span>
+                    <div class="flex items-baseline justify-center md:justify-start gap-3">
+                        <!-- USD Price (Primary) -->
+                        <div class="flex items-start">
+                            <span class="text-sm font-bold text-slate-500 mt-1 mr-0.5">$</span>
+                            <span id="total-price-usd"
+                                class="text-3xl font-black text-slate-900 tracking-tight">0</span>
+                        </div>
+
+                        <span class="text-slate-300 text-2xl font-light">/</span>
+
+                        <!-- EUR Price (Secondary) -->
+                        <div class="flex items-start">
+                            <span class="text-xs font-bold text-primary mt-1.5 mr-0.5">€</span>
+                            <span id="total-price-eur" class="text-2xl font-bold text-primary">0</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-medium mt-0.5">Inkl. Steuern & Versand (Approx. Rate:
+                        0.86)</span>
+                </div>
+
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <!-- Qty -->
+                    <div
+                        class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2 h-14 shadow-inner">
+                        <button type="button" onclick="changeQty(-1)"
+                            class="size-10 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors hover:bg-white hover:shadow-sm rounded-lg">
+                            <span class="material-symbols-outlined text-lg">remove</span>
+                        </button>
+                        <input id="qty-input" type="number" value="1"
+                            class="w-12 text-center bg-transparent border-none focus:ring-0 font-bold text-slate-900 text-lg p-0"
+                            readonly>
+                        <button type="button" onclick="changeQty(1)"
+                            class="size-10 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors hover:bg-white hover:shadow-sm rounded-lg">
+                            <span class="material-symbols-outlined text-lg">add</span>
+                        </button>
+                    </div>
+
+                    <!-- Add Button -->
+                    <button type="button" onclick="addToCart()"
+                        class="flex-1 md:flex-none md:w-72 bg-slate-900 hover:bg-primary text-white h-14 rounded-xl font-bold text-lg transition-all flex justify-center items-center gap-3 shadow-xl hover:shadow-primary/30 transform hover:-translate-y-1">
+                        <span class="material-symbols-outlined">shopping_bag</span>
+                        In den Warenkorb
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+    </main>
+
+    <!-- === MODERN FOOTER === -->
+<footer class="bg-slate-900 text-slate-300 border-t border-slate-800 pt-16 pb-8 font-sans">
+        <div class="max-w-[1440px] mx-auto px-6 lg:px-20">
+
+            <!-- Top Grid: Brand, Links, Contact -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+
+                <!-- 1. Brand & Promise -->
+                <div class="space-y-6">
+                    <a href="/" class="flex items-center gap-3 group">
+                        <div
+                            class="size-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 group-hover:border-primary/50 transition-colors">
+                            <img src="/static/icons/favicon.svg" alt="Realistix" class="size-6 opacity-90">
+                        </div>
+                        <span class="text-xl font-black text-white tracking-tight font-serif">Realistix Doll</span>
+                    </a>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Handgefertigte TPE- & Silikonkunstwerke. Wir verbinden europäische Design-Standards mit
+                        meisterhafter Handwerkskunst für unvergleichlichen Realismus.
+                    </p>
+                    <div class="flex items-center gap-4 pt-2">
+                        <div
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                            <span class="material-symbols-outlined text-sm">verified_user</span>
+                            Verifizierter Shop
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Customer Care -->
+                <div>
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-primary rounded-full"></span>
+                        Service & Hilfe
+                    </h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="/my-orders"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">chevron_right</span> Meine
+                                Bestellungen</a></li>
+                    </ul>
+                </div>
+
+                <!-- 3. Legal (Rechtliches) -->
+                <div>
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-primary rounded-full"></span>
+                        Rechtliches
+                    </h4>
+                    <ul class="space-y-3 text-sm">
+                        <li><a href="/impressum"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">gavel</span> Impressum</a></li>
+                        <li><a href="/datenschutz"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">policy</span>
+                                Datenschutzerklärung</a></li>
+                        <li><a href="/agb" class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">description</span> AGB</a></li>
+                        <li><a href="/widerruf"
+                                class="hover:text-primary transition-colors flex items-center gap-2"><span
+                                    class="material-symbols-outlined text-xs opacity-50">undo</span> Widerrufsrecht</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 4. Contact & HQ (Transparent Indian Address) -->
+                <div>
+                    <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-primary rounded-full"></span>
+                        Atelier & Kontakt
+                    </h4>
+                    <div class="space-y-4 text-sm text-slate-400">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-primary mt-0.5">location_on</span>
+                            <div>
+                                <strong class="text-slate-200 block">Realistix Doll HQ</strong>
+                                <span class="block">Connaught Place</span>
+                                <span class="block">110001 New Delhi, Indien</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">mail</span>
+                            <a href="mailto:support@realistixdoll.com"
+                                class="hover:text-white transition-colors">support@realistixdoll.com</a>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">call</span>
+                            <span>+91 98765 43210</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Middle: Trust & Payment Bar -->
+            <div class="border-t border-slate-800 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
+
+                <!-- Secure Payment -->
+                <div class="flex flex-col items-center md:items-start gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sichere Zahlung</span>
+                    <div
+                        class="flex items-center gap-3 opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
+                        <!-- Using generic SVGs or hosted logos for professionalism -->
+                        <img src="/static/wise.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Wise">
+                        <img src="/static/revolut.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Revolut">
+                        <img src="/static/worldremit.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Visa">
+                        <img src="/static/remitly.png"
+                            class="h-12 w-auto bg-white rounded px-1" alt="Mastercard">
+                    </div>
+                </div>
+
+                <!-- Global Shipping -->
+                <div class="flex flex-col items-center md:items-end gap-3">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Logistikpartner</span>
+                    <div
+                        class="flex items-center gap-3 opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
+                        <img src="https://cdn.worldvectorlogo.com/logos/dhl-1.svg"
+                            class="h-12 w-auto bg-white rounded px-1" alt="DHL">
+                        <img src="https://cdn.worldvectorlogo.com/logos/fedex-express-6.svg"
+                            class="h-12 w-auto bg-white rounded px-1" alt="FedEx">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom: Copyright & Disclaimer -->
+            <div
+                class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+                <p>
+                    &copy; 2026 Realistix Doll S.A. Alle Rechte vorbehalten.
+                    <span class="hidden md:inline mx-2 text-slate-700">|</span>
+                    Operated by Rahul Sharma Enterprises, India.
+                </p>
+                <div class="flex items-center gap-4">
+                    <span class="flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[14px]">lock</span> SSL Verschlüsselt</span>
+                    <span class="flex items-center gap-1"><span
+                            class="material-symbols-outlined text-[14px]">public</span> Globaler Versand</span>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- DATA INJECTION (This would be rendered by Flask/Jinja) -->
+    <!-- The layout assumes 'product' variable is passed from Flask -->
+    <script id="product-data" type="application/json">
+        {{ product | tojson | safe }}
+    </script>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        // --- 1. INITIALIZATION ---
+        let product = {};
+        const EXCHANGE_RATE = 0.86; // Fixed Rate
+
+        async function init() {
+            // Simulate API Network Delay
+            await new Promise(r => setTimeout(r, 500));
+
+            // Load Data
+            try {
+                const rawData = document.getElementById('product-data').textContent;
+                product = JSON.parse(rawData);
+
+                // FIX: Ensure basePrice is a Float, handle missing price fields
+                product.basePrice = parseFloat(product.price || product.basePrice || 0);
+
+                renderProduct();
+            } catch (e) {
+                console.error("Error parsing product data", e);
+            }
+
+            // Transition UI
+            document.getElementById('loading-skeleton').classList.add('hidden');
+            const content = document.getElementById('product-content');
+            content.classList.remove('hidden');
+
+            setTimeout(() => {
+                content.classList.remove('opacity-0');
+                document.getElementById('action-bar').classList.remove('translate-y-full');
+            }, 50);
+
+            renderCart();
+        }
+
+        // --- 2. RENDER FUNCTIONS ---
+
+        function renderProduct() {
+            document.getElementById('product-title').innerText = product.name;
+
+            // Render Gallery
+            const thumbContainer = document.getElementById("gallery-thumbs");
+            const mainImg = document.getElementById("main-image");
+
+            if (product.gallery && product.gallery.length > 0) {
+                mainImg.src = product.gallery[0];
+                thumbContainer.innerHTML = '';
+
+                product.gallery.forEach((url, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `shrink-0 size-16 md:size-20 rounded-xl overflow-hidden border-2 transition-all ${index === 0 ? 'border-primary shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`;
+                    btn.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+                    btn.onclick = () => {
+                        mainImg.src = url;
+                        Array.from(thumbContainer.children).forEach(c => {
+                            c.className = 'shrink-0 size-16 md:size-20 rounded-xl overflow-hidden border-2 border-transparent opacity-60 hover:opacity-100 transition-all';
+                        });
+                        btn.className = 'shrink-0 size-16 md:size-20 rounded-xl overflow-hidden border-2 border-primary shadow-md scale-105 transition-all';
+                    };
+                    thumbContainer.appendChild(btn);
+                });
+            } else {
+                mainImg.src = "https://placehold.co/600x800?text=No+Image";
+            }
+
+            // Render Options
+            const form = document.getElementById("customization-form");
+            form.innerHTML = '';
+
+            if (product.options && product.options.length > 0) {
+                product.options.forEach(opt => {
+                    const group = document.createElement("div");
+                    group.className = "animate-fade-in";
+
+                    const headerHTML = `
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">${opt.label}</h3>
+                            ${opt.info ? `<p class="text-xs text-slate-400 mt-1 max-w-sm leading-relaxed">${opt.info}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                    let gridClass = "grid grid-cols-2 gap-3";
+                    if (opt.type === "grid") gridClass = "grid grid-cols-3 sm:grid-cols-4 gap-3";
+                    if (opt.type === "swatch") gridClass = "flex flex-wrap gap-3";
+
+                    let optionsHTML = `<div class="${gridClass}">`;
+
+                    opt.values.forEach((val, index) => {
+                        const isSelected = index === 0;
+                        let priceAdd = parseFloat(val.price || 0);
+
+                        // If database price is 0, check if price is hidden in the name (e.g., "Option +$150")
+                        if (priceAdd === 0 && val.name && val.name.includes('+')) {
+                            // Regex looks for a plus sign, optional space, optional dollar, then numbers
+                            const match = val.name.match(/\+\s*\$?\s*([0-9]+)/);
+                            if (match && match[1]) {
+                                priceAdd = parseFloat(match[1]);
+                            }
+                        }
+                        // --- FIX END ---
+
+                        // Show price difference if > 0
+                        const priceText = priceAdd > 0 ? `+ $${priceAdd}` : 'Inkl.';
+
+                        if (opt.type === "swatch") {
+                            optionsHTML += `
+                            <label class="group cursor-pointer relative">
+                                <input type="radio" name="${opt.id || opt.label}" value="${val.name}" 
+                                       data-price="${priceAdd}" 
+                                       data-img="${val.img || ''}" 
+                                       class="option-radio peer sr-only" 
+                                       ${isSelected ? 'checked' : ''}
+                                       onchange="updatePrice()">
+                                <div class="option-card size-14 rounded-full border-2 border-slate-200 overflow-hidden relative shadow-sm transition-all peer-checked:scale-110 peer-checked:border-primary peer-checked:shadow-primary/20">
+                                    <img src="${val.img || 'https://placehold.co/50'}" class="w-full h-full object-cover">
+                                    <div class="check-icon absolute inset-0 bg-primary/40 flex items-center justify-center opacity-0 transition-opacity">
+                                        <span class="material-symbols-outlined text-white text-lg drop-shadow-md">check</span>
+                                    </div>
+                                </div>
+                                <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-xl">${val.name}</span>
+                            </label>
+                        `;
+                        } else {
+                            optionsHTML += `
+                            <label class="cursor-pointer group h-full">
+                                <input type="radio" name="${opt.id || opt.label}" value="${val.name}" 
+                                       data-price="${priceAdd}" 
+                                       data-img="${val.img || ''}" 
+                                       class="option-radio peer sr-only" 
+                                       ${isSelected ? 'checked' : ''}
+                                       onchange="updatePrice()">
+                                <div class="option-card rounded-xl border-2 border-slate-100 bg-white p-2 hover:border-slate-300 transition-all h-full flex flex-col relative overflow-hidden">
+                                    ${val.img ? `<div class="aspect-square rounded-lg overflow-hidden mb-2 bg-slate-50 relative"><img src="${val.img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"></div>` : ''}
+                                    <div class="mt-auto">
+                                        <p class="text-xs font-bold text-slate-800 leading-tight mb-1">${val.name}</p>
+                                        <p class="text-[10px] font-bold text-slate-400 bg-slate-50 inline-block px-1.5 py-0.5 rounded">${priceText}</p>
+                                    </div>
+                                    <div class="check-icon absolute top-2 right-2 text-primary opacity-0 transition-all transform scale-50">
+                                        <span class="material-symbols-outlined fill-1">check_circle</span>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                        }
+                    });
+                    optionsHTML += `</div>`;
+                    group.innerHTML = headerHTML + optionsHTML;
+                    form.appendChild(group);
+                });
+            } else {
+                form.innerHTML = "<p class='text-slate-400 italic p-4 border border-dashed border-slate-200 rounded-xl'>Standardkonfiguration - Keine Anpassungen notwendig.</p>";
+            }
+
+            // Initialize price calculation
+            updatePrice();
+        }
+
+        // --- 3. PRICE & CART LOGIC ---
+
+        // Format Helper: 1234 -> "1,234" (No decimals)
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(Math.round(num));
+        }
+
+      function updatePrice() {
+        // 1. Start with Base Price
+        let total = product.basePrice;
+
+        // 2. Add Options
+        // We use querySelectorAll to find every checked radio button
+        const selectedOptions = document.querySelectorAll('input.option-radio:checked');
+        
+        selectedOptions.forEach(input => {
+            // Get price from the data attribute we fixed in Step 1
+            const add = parseFloat(input.getAttribute('data-price'));
+            if (!isNaN(add)) {
+                total += add;
+            }
+        });
+
+        // 3. Multiply by Quantity
+        const qtyInput = document.getElementById("qty-input");
+        const qty = qtyInput ? parseInt(qtyInput.value) : 1;
+        total = total * qty;
+
+        // 4. Calculate Euro
+        const totalEur = total * EXCHANGE_RATE;
+
+        // 5. Update UI
+        const elUsd = document.getElementById("total-price-usd");
+        const elEur = document.getElementById("total-price-eur");
+
+        if(elUsd) elUsd.innerText = formatNumber(total);
+        if(elEur) elEur.innerText = formatNumber(totalEur);
+
+        // 6. Visual Animation (Green Flash)
+        if(elUsd) {
+            // Reset animation
+            elUsd.style.animation = 'none';
+            elUsd.offsetHeight; /* trigger reflow */
+            elUsd.style.animation = null; 
+            
+            // Add pulse class
+            elUsd.classList.add('text-green-600', 'scale-105');
+            setTimeout(() => {
+                elUsd.classList.remove('text-green-600', 'scale-105');
+            }, 300);
+        }
+    }
+
+        function changeQty(amount) {
+            const el = document.getElementById("qty-input");
+            let val = parseInt(el.value) + amount;
+            if (val < 1) val = 1;
+            el.value = val;
+            updatePrice();
+        }
+
+        function addToCart() {
+            // Collect config
+            const config = {};
+            let finalUnitPrice = product.basePrice;
+
+            document.querySelectorAll('input.option-radio:checked').forEach(input => {
+                config[input.name] = {
+                    value: input.value,
+                    price: parseFloat(input.dataset.price || 0),
+                    img: input.dataset.img
+                };
+                finalUnitPrice += parseFloat(input.dataset.price || 0);
+            });
+
+            const qty = parseInt(document.getElementById("qty-input").value);
+
+            const cartItem = {
+                id: Date.now(),
+                productId: product.id,
+                name: product.name,
+                price: finalUnitPrice,
+                qty: qty,
+                image: product.gallery ? product.gallery[0] : '',
+                config: config
+            };
+
+            const cart = JSON.parse(localStorage.getItem('luxeCart')) || [];
+            cart.push(cartItem);
+            localStorage.setItem('luxeCart', JSON.stringify(cart));
+
+            renderCart();
+            toggleCart(true);
+
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3000);
+        }
+
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem('luxeCart')) || [];
+            const container = document.getElementById('cart-items');
+
+            let html = '';
+            let total = 0;
+            let count = 0;
+
+            cart.forEach((item, idx) => {
+                total += item.price * item.qty;
+                count += item.qty;
+
+                let configHtml = '';
+                for (let key in item.config) {
+                    configHtml += `<span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded inline-block mr-1 mb-1 border border-slate-200">${item.config[key].value}</span>`;
+                }
+
+                html += `
+                <div class="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
+                    <div class="size-20 rounded-lg bg-white bg-cover bg-center shrink-0 border border-slate-200" style="background-image: url('${item.image}')"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-bold text-sm text-slate-900 truncate pr-6">${item.name}</h4>
+                            <button onclick="removeCartItem(${idx})" class="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors p-1"><span class="material-symbols-outlined text-lg">delete</span></button>
+                        </div>
+                        <div class="flex flex-wrap mb-2">${configHtml}</div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-xs text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">Menge: ${item.qty}</span>
+                            <span class="font-black text-sm text-slate-900">$${formatNumber(item.price * item.qty)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+
+            if (cart.length === 0) {
+                html = `<div class="h-64 flex flex-col items-center justify-center text-slate-400">
+                <span class="material-symbols-outlined text-3xl opacity-30">shopping_cart_off</span>
+                <p class="text-sm mt-2">Ihr Warenkorb ist leer</p>
+            </div>`;
+            }
+
+            container.innerHTML = html;
+            document.getElementById('cart-count-header').innerText = count;
+            document.getElementById('cart-badge').innerText = count;
+            document.getElementById('cart-badge').style.transform = count > 0 ? "scale(1)" : "scale(0)";
+            document.getElementById('cart-total').innerText = "$" + formatNumber(total);
+        }
+
+        function removeCartItem(idx) {
+            const cart = JSON.parse(localStorage.getItem('luxeCart')) || [];
+            cart.splice(idx, 1);
+            localStorage.setItem('luxeCart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function toggleCart(show) {
+            const sidebar = document.getElementById('cart-sidebar');
+            const overlay = document.getElementById('cart-overlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                    sidebar.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function zoom(e) {
+            const container = e.currentTarget;
+            const img = document.getElementById("main-image");
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const xPercent = (x / container.offsetWidth) * 100;
+            const yPercent = (y / container.offsetHeight) * 100;
+            img.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+            img.style.transform = "scale(2.5)";
+        }
+
+        function resetZoom() {
+            const img = document.getElementById("main-image");
+            img.style.transform = "scale(1)";
+            setTimeout(() => { img.style.transformOrigin = "center center"; }, 150);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+
+    <!-- FIREBASE AUTH (Same as Index) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+  apiKey: "AIzaSyAf1cpih22DLVpo9umzhLeJWi59pcQwhUQ",
+  authDomain: "realistixdoll.firebaseapp.com",
+  projectId: "realistixdoll",
+  storageBucket: "realistixdoll.firebasestorage.app",
+  messagingSenderId: "797964056076",
+  appId: "1:797964056076:web:6deb911bda83372109e029",
+  measurementId: "G-1GBMKJEV3L"
+};
+
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const authContainer = document.getElementById('header-auth-actions');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const displayName = user.displayName || user.email.split('@')[0];
+                const photoURL = user.photoURL || `https://ui-avatars.com/api/?name=${displayName}&background=20cfdf&color=fff`;
+
+                authContainer.innerHTML = `
+            <div class="relative group z-50">
+                <button class="flex items-center gap-3 pl-1 pr-4 py-1 bg-slate-50 border border-slate-200 rounded-full hover:bg-white hover:shadow-md transition-all">
+                    <img src="${photoURL}" class="size-8 rounded-full border border-white shadow-sm object-cover">
+                    <span class="text-sm font-bold text-slate-700 truncate max-w-[100px]">${displayName}</span>
+                </button>
+                <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50 overflow-hidden">
+                    <div class="bg-slate-50 px-4 py-3 border-b border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Konto</p>
+                        <p class="text-xs text-slate-600 truncate">${user.email}</p>
+                    </div>
+                    <ul class="py-1">
+                        <li><a href="/my-orders" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">Meine Bestellungen</a></li>
+                        <li><button id="btn-logout" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">Abmelden</button></li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
+                setTimeout(() => {
+                    document.getElementById('btn-logout')?.addEventListener('click', () => {
+                        signOut(auth).then(() => {
+                            fetch('/logout').then(() => window.location.href = "/");
+                        });
+                    });
+                }, 100);
+            } else {
+                authContainer.innerHTML = `
+            <a href="/auth?type=signin" class="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Anmelden</a>
+            <a href="/auth?type=signup" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-primary hover:shadow-lg hover:shadow-primary/25 transition-all">Registrieren</a>
+        `;
+            }
+            authContainer.classList.remove('hidden');
+        });
+
+    </script>
+</body>
+
+</html>
